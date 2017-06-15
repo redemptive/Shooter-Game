@@ -1,20 +1,28 @@
 $(document).ready(function(){
 	
 	var thePlayer;
+	var difficulty = 1;
 	var maxEnemies = 10;
 	var enemies = [maxEnemies];
 	var maxBullets = 20;
 	var bullets = [maxBullets];
+	var maxScore = 0;
+	var paused = false;
+	var keyMap = {87: false, 68: false, 65: false, 83: false, 65: false};
 	
-	$(document).keypress(function(e) {
-		if (e.which == 119) {
-			thePlayer.y -= 5;
-		} else if (e.which == 100) {
-			thePlayer.x += 5;
-		} else if (e.which == 97) {
-			thePlayer.x -= 5;
-		} else if (e.which == 115) {
-			thePlayer.y += 5;
+	$(document).keydown(function(e) {
+		//alert(keyMap[e.keyCode] + " " + e.keyCode);
+		if (e.keyCode in keyMap) {
+			keyMap[e.keyCode] = true;
+			if (paused && e.keyCode == 80) {
+				paused = false;
+			} else if (!paused && e.keyCode == 80){
+				paused = true;
+			}
+		}
+	}).keyup(function(e) {
+		if (e.keyCode in keyMap) {
+			keyMap[e.keyCode] = false;
 		}
 	});
 	
@@ -50,9 +58,9 @@ $(document).ready(function(){
 			this.context.fillRect(0, 0, width, height);
 			this.context.restore();
 		},
-		drawText : function (theString, x, y) {
+		drawText : function (theString, x, y, size = 16) {
 			//Draw function for text
-			this.context.font = "16px Verdana";
+			this.context.font = size + "px Verdana";
 			this.context.fillText(theString, x, y);
 		}
 	}
@@ -67,7 +75,30 @@ $(document).ready(function(){
 		this.height = 20;
 		this.width = 20;
 		this.score = 0;
+		this.speed = 3;
 		this.update = function() {
+			if (keyMap[87]) {
+				thePlayer.y -= this.speed;
+			} 
+			if (keyMap[68]) {
+				thePlayer.x += this.speed;
+			}
+			if (keyMap[65]) {
+				thePlayer.x -= this.speed;
+			}
+			if (keyMap[83]) {
+				thePlayer.y += this.speed;
+			}
+			if (this.health < 0) {
+				this.health = 100;
+				this.x = Math.floor(Math.random()*gameArea.canvas.width);
+				this.y = Math.floor(Math.random()*gameArea.canvas.height);
+				if (this.score > maxScore) {
+					maxScore = this.score;
+				}
+				this.score = 0;
+				difficulty = 0;
+			}
 			//Draw player base
 			gameArea.draw(this.height, this.width, this.x, this.y, this.color,0);
 			//Draw player turret pointed at the aim y and aim x (where the mouse is)
@@ -80,6 +111,7 @@ $(document).ready(function(){
 	function enemy(x,y) {
 		this.health = 100;
 		this.cooldown = 0;
+		this.fireSpeed = 200 - (difficulty * 10);
 		this.color = "red";
 		this.x = x;
 		this.y = y;
@@ -87,19 +119,26 @@ $(document).ready(function(){
 		this.width = 20;
 		this.moving = Math.random() >= 0.5;
 		this.update = function() {
+			
 			if (this.health < 0) {
 				this.die();
 			}
-			if (this.cooldown > 100) {
+			
+			//Fire at a set interval
+			if (this.cooldown > this.fireSpeed) {
 				this.cooldown = 0;
 				this.fire();
 			} else {
 				this.cooldown += 1;
 			}
+			
+			//move if this is a moving enemy
 			if (this.moving) {
 				this.x += ((thePlayer.x - this.x) / 500);
 				this.y += ((thePlayer.y - this.y) / 500);
 			}
+			
+			//draw enemy
 			gameArea.draw(this.height, this.width, this.x, this.y, this.color);
 		}
 		this.fire = function() {
@@ -119,6 +158,7 @@ $(document).ready(function(){
 		this.size = 5;
 		this.speed = 3;
 		this.rotation = rotation;
+		
 		this.update = function() {
 			//Keep bullet going at the same speed on a diagonal path
 			this.x += this.speed * Math.cos(this.rotation);
@@ -128,10 +168,18 @@ $(document).ready(function(){
 			}
 			gameArea.draw(this.size,this.size,this.x,this.y,"black",this.rotation);
 		}
+		
 		this.die = function() {
+			//Remove from bullets array
 			bullets.splice(bullets.indexOf(this),1);
 		}
-	}	
+	}
+
+	function healthBox() {
+		this.x = Math.floor(Math.random()*gameArea.canvas.width);
+		this.y = Math.floor(Math.random()*gameArea.canvas.height);
+		this.size = 50;
+	}
 	
 	function collission(x1,y1,w1,h1,x2,y2,w2,h2) {
 		var r1 = w1 + x1;
@@ -147,33 +195,55 @@ $(document).ready(function(){
 	}
 	
 	function updateGameArea() {
-		gameArea.clear();
-		thePlayer.update();
-		gameArea.drawText("Health: " + thePlayer.health,0,20);
-		gameArea.drawText("Enemies: " + enemies.length,0,40);
-		gameArea.drawText("Score: " + thePlayer.score, 0, 60)
-		//Spawn enemies randomly or spawn if there isn't any active ones
-		if (enemies.length < 1 || ((Math.floor(Math.random() * 200) == 100) && enemies.length < maxEnemies)) {
-			enemies[enemies.length] = new enemy(Math.floor(Math.random()*gameArea.canvas.width),Math.floor(Math.random()*gameArea.canvas.height));
-		}
-		for (i=0; i < enemies.length; i++) {
-			enemies[i].update();
-		}
-		for (i=0;i < bullets.length;i++) {
-			bullets[i].update();
-			//Check collission with the bullet at bullets[i] and every enemy
-			for (j=0;j < enemies.length;j++) {
-				if (collission(bullets[i].x,bullets[i].y,bullets[i].size,bullets[i].size,enemies[j].x,enemies[j].y,enemies[j].width,enemies[j].height)) {
-					enemies[j].health -= 50;
-					thePlayer.score += 1;
+		
+		if (!paused) {
+			
+			gameArea.clear();
+			
+			//Update the player
+			thePlayer.update();
+			//Progressively raise the difficulty depending on the score
+			if (difficulty < thePlayer.score / 10) {
+				difficulty ++;
+			}
+			//Spawn enemies randomly or spawn if there isn't any active ones
+			if (enemies.length < 1 || ((Math.floor(Math.random() * 200) == 100) && enemies.length < maxEnemies && enemies.length < difficulty)) {
+				enemies[enemies.length] = new enemy(Math.floor(Math.random()*gameArea.canvas.width),Math.floor(Math.random()*gameArea.canvas.height));
+			}
+			
+			//Update all the enemies
+			for (i=0; i < enemies.length; i++) {
+				enemies[i].update();
+			}
+			
+			//Update all the bullets
+			for (i=0;i < bullets.length;i++) {
+				bullets[i].update();
+				//Check collission with the bullet at bullets[i] and every enemy
+				for (j=0;j < enemies.length;j++) {
+					if (collission(bullets[i].x,bullets[i].y,bullets[i].size,bullets[i].size,enemies[j].x,enemies[j].y,enemies[j].width,enemies[j].height)) {
+						enemies[j].health -= 50;
+						thePlayer.score += 1;
+						bullets[i].die();
+					}
+				}
+				//Check collission with the bullet at bullets[i] and the player
+				if (collission(thePlayer.x,thePlayer.y,thePlayer.width,thePlayer.height,bullets[i].x,bullets[i].y,bullets[i].size,bullets[i].size)) {
+					thePlayer.health -= 10;
 					bullets[i].die();
 				}
 			}
-			//Check collission with the bullet at bullets[i] and the player
-			if (collission(thePlayer.x,thePlayer.y,thePlayer.width,thePlayer.height,bullets[i].x,bullets[i].y,bullets[i].size,bullets[i].size)) {
-				thePlayer.health -= 10;
-				bullets[i].die();
-			}
+			
+			//Draw the HUD
+			gameArea.drawText("Health: " + thePlayer.health,0,20);
+			gameArea.drawText("Difficulty: " + difficulty, 0, 40)
+			gameArea.drawText("Enemies: " + enemies.length,0,60);
+			gameArea.drawText("Score: " + thePlayer.score, 0, 80);
+			gameArea.drawText("Max Score: " + maxScore, 0, 100);
+			
+		} else {
+			//Draw Paused instead when paused
+			gameArea.drawText("Paused", Math.floor(gameArea.canvas.width / 2) - 125, Math.floor(gameArea.canvas.height / 2), 48);
 		}
 	}
 	
