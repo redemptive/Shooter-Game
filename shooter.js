@@ -1,10 +1,10 @@
 $(document).ready(function(){
 	
-	const difficulty = 1;
 	const maxEnemies = 10;
 	const maxScore = 0;
 	const maxPickups = 2;
 	const maxBullets = 20;
+	let difficulty = 1;
 	let enemies = [maxEnemies];
 	let bullets = [maxBullets];
 	let pickups = [maxPickups];
@@ -70,31 +70,33 @@ $(document).ready(function(){
 		}
 	}
 	
-	function Player(x,y) {
-		this.maxHealth = 100;
-		this.health = this.maxHealth;
-		this.color = "black";
-		this.x = x;
-		this.y = y;
-		this.aimX = 0;
-		this.aimY = 0;
-		this.height = 20;
-		this.width = 20;
-		this.score = 0;
-		this.speed = 3;
-		this.update = function() {
+	class Player {
+		constructor(x,y) {
+			this.maxHealth = 100;
+			this.health = this.maxHealth;
+			this.color = "black";
+			this.x = x;
+			this.y = y;
+			this.aimX = 0;
+			this.aimY = 0;
+			this.height = 20;
+			this.width = 20;
+			this.score = 0;
+			this.speed = 3;
+		}
+		update() {
 			//check movement key presses in the array of keys
 			if (keyMap[87] || keyMap[38]) {
-				player.y -= this.speed;
+				this.y -= this.speed;
 			} 
 			if (keyMap[68] || keyMap[39]) {
-				player.x += this.speed;
+				this.x += this.speed;
 			}
 			if (keyMap[65] || keyMap[37]) {
-				player.x -= this.speed;
+				this.x -= this.speed;
 			}
 			if (keyMap[83] || keyMap[40]) {
-				player.y += this.speed;
+				this.y += this.speed;
 			}
 			//start again if the player dies
 			if (this.health < 0) {
@@ -105,11 +107,10 @@ $(document).ready(function(){
 					maxScore = this.score;
 				}
 				this.score = 0;
-				difficulty = 1
-				;
+				difficulty = 1;
 			}
 			//Draw player base
-			gameArea.draw(this.height, this.width, this.x, this.y, this.color,0);
+			gameArea.draw(this.height, this.width, this.x, this.y, this.color, 0);
 			//Draw player turret pointed at the aim y and aim x (where the mouse is)
 			gameArea.draw(6,40,(this.x + ((this.width/2)-3)),(this.y + ((this.height/2)-3)), this.color,Math.atan2(this.aimY - this.y, this.aimX - this.x));
 			//Draw the health bar
