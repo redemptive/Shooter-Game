@@ -1,17 +1,17 @@
 $(document).ready(function(){
 	
-	var thePlayer;
-	var difficulty = 1;
-	var maxEnemies = 10;
-	var enemies = [maxEnemies];
-	var maxBullets = 20;
-	var bullets = [maxBullets];
-	var maxPickups = 2;
-	var pickups = [maxPickups];
-	var maxScore = 0;
-	var paused = false;
+	const difficulty = 1;
+	const maxEnemies = 10;
+	const maxScore = 0;
+	const maxPickups = 2;
+	const maxBullets = 20;
+	let enemies = [maxEnemies];
+	let bullets = [maxBullets];
+	let pickups = [maxPickups];
+	let paused = false;
+	let player;
 	//87 & 38 = up, 68 & 39 = right, 65 & 40 = down, 83 & 37 = left, 80 = pause
-	var keyMap = {87: false, 38: false, 68: false, 39: false, 65: false, 40: false, 83: false, 37: false, 80: false};
+	let keyMap = {87: false, 38: false, 68: false, 39: false, 65: false, 40: false, 83: false, 37: false, 80: false};
 	
 	$(document).keydown(function(e) {
 		if (e.keyCode in keyMap) {
@@ -29,17 +29,17 @@ $(document).ready(function(){
 	});
 	
 	$(document).on("mousemove", function(event) {
-		thePlayer.aimX = event.pageX;
-		thePlayer.aimY = event.pageY;
+		player.aimX = event.pageX;
+		player.aimY = event.pageY;
 	});
 	
 	$(document).on("click", function(event) {
 		if (bullets.length < maxBullets) {
-			bullets[bullets.length] = new bullet(thePlayer.x,thePlayer.y,Math.atan2(thePlayer.aimY - thePlayer.y, thePlayer.aimX - thePlayer.x));
+			bullets[bullets.length] = new bullet(player.x,player.y,Math.atan2(player.aimY - player.y, player.aimX - player.x));
 		}
 	});
 	
-	var gameArea = {
+	const gameArea = {
 		canvas : document.createElement("canvas"),
 		start : function () {
 			this.canvas.width = document.body.clientWidth;
@@ -70,7 +70,7 @@ $(document).ready(function(){
 		}
 	}
 	
-	function player(x,y) {
+	function Player(x,y) {
 		this.maxHealth = 100;
 		this.health = this.maxHealth;
 		this.color = "black";
@@ -85,16 +85,16 @@ $(document).ready(function(){
 		this.update = function() {
 			//check movement key presses in the array of keys
 			if (keyMap[87] || keyMap[38]) {
-				thePlayer.y -= this.speed;
+				player.y -= this.speed;
 			} 
 			if (keyMap[68] || keyMap[39]) {
-				thePlayer.x += this.speed;
+				player.x += this.speed;
 			}
 			if (keyMap[65] || keyMap[37]) {
-				thePlayer.x -= this.speed;
+				player.x -= this.speed;
 			}
 			if (keyMap[83] || keyMap[40]) {
-				thePlayer.y += this.speed;
+				player.y += this.speed;
 			}
 			//start again if the player dies
 			if (this.health < 0) {
@@ -113,7 +113,7 @@ $(document).ready(function(){
 			//Draw player turret pointed at the aim y and aim x (where the mouse is)
 			gameArea.draw(6,40,(this.x + ((this.width/2)-3)),(this.y + ((this.height/2)-3)), this.color,Math.atan2(this.aimY - this.y, this.aimX - this.x));
 			//Draw the health bar
-			gameArea.draw(20,(gameArea.canvas.width / 100) * thePlayer.health,0,gameArea.canvas.height - 40, "red",0);
+			gameArea.draw(20,(gameArea.canvas.width / 100) * player.health,0,gameArea.canvas.height - 40, "red",0);
 		}
 	}
 	
@@ -143,8 +143,8 @@ $(document).ready(function(){
 			
 			//move if this is a moving enemy
 			if (this.moving) {
-				this.x += ((thePlayer.x - this.x) / 500);
-				this.y += ((thePlayer.y - this.y) / 500);
+				this.x += ((player.x - this.x) / 500);
+				this.y += ((player.y - this.y) / 500);
 			}
 			
 			//draw enemy
@@ -152,7 +152,7 @@ $(document).ready(function(){
 		}
 		this.fire = function() {
 			if (bullets.length < maxBullets) {
-				bullets[bullets.length] = new bullet(this.x,this.y,Math.atan2(thePlayer.y - this.y, thePlayer.x - this.x));
+				bullets[bullets.length] = new bullet(this.x,this.y,Math.atan2(player.y - this.y, player.x - this.x));
 			}
 		}
 		this.die = function() {
@@ -204,10 +204,10 @@ $(document).ready(function(){
 		}
 		this.collect = function() {
 			if (this.type == "health") {
-				if (thePlayer.health + 25 < thePlayer.maxHealth) {
-					thePlayer.health += 25;
+				if (player.health + 25 < player.maxHealth) {
+					player.health += 25;
 				} else {
-					thePlayer.health = thePlayer.maxHealth;
+					player.health = player.maxHealth;
 				}
 			} else if (this.type = "bomb") {
 				enemies[enemies.length - 1].die();
@@ -219,10 +219,10 @@ $(document).ready(function(){
 	}
 	
 	function collission(x1,y1,w1,h1,x2,y2,w2,h2) {
-		var r1 = w1 + x1;
-		var b1 = h1 + y1;
-		var r2 = w2 + x2;
-		var b2 = h2 + y2;
+		let r1 = w1 + x1;
+		let b1 = h1 + y1;
+		let r2 = w2 + x2;
+		let b2 = h2 + y2;
 						
 		if (x1 < r2 && r1 > x2 && y1 < b2 && b1 > y2) {
 			return true;
@@ -238,9 +238,9 @@ $(document).ready(function(){
 			gameArea.clear();
 			
 			//Update the player
-			thePlayer.update();
+			player.update();
 			//Progressively raise the difficulty depending on the score
-			if (difficulty < thePlayer.score / 10) {
+			if (difficulty < player.score / 10) {
 				difficulty ++;
 			}
 			//Spawn enemies randomly or spawn if there isn't any active ones
@@ -256,7 +256,7 @@ $(document).ready(function(){
 			//update healthboxes
 			for (i = 0; i < pickups.length; i++) {
 				pickups[i].update();
-				if (collission(thePlayer.x,thePlayer.y,thePlayer.width,thePlayer.height,pickups[i].x,pickups[i].y,pickups[i].size,pickups[i].size)) {
+				if (collission(player.x,player.y,player.width,player.height,pickups[i].x,pickups[i].y,pickups[i].size,pickups[i].size)) {
 					pickups[i].collect();
 					pickups[i].die();
 				}
@@ -278,22 +278,22 @@ $(document).ready(function(){
 				for (j=0;j < enemies.length;j++) {
 					if (collission(bullets[i].x,bullets[i].y,bullets[i].size,bullets[i].size,enemies[j].x,enemies[j].y,enemies[j].width,enemies[j].height)) {
 						enemies[j].health -= 50;
-						thePlayer.score += 1;
+						player.score += 1;
 						bullets[i].die();
 					}
 				}
 				//Check collission with the bullet at bullets[i] and the player
-				if (collission(thePlayer.x,thePlayer.y,thePlayer.width,thePlayer.height,bullets[i].x,bullets[i].y,bullets[i].size,bullets[i].size)) {
-					thePlayer.health -= 10;
+				if (collission(player.x,player.y,player.width,player.height,bullets[i].x,bullets[i].y,bullets[i].size,bullets[i].size)) {
+					player.health -= 10;
 					bullets[i].die();
 				}
 			}
 			
 			//Draw the HUD
-			gameArea.drawText("Health: " + thePlayer.health,0,20);
+			gameArea.drawText("Health: " + player.health,0,20);
 			gameArea.drawText("Difficulty: " + difficulty, 0, 40)
 			gameArea.drawText("Enemies: " + enemies.length,0,60);
-			gameArea.drawText("Score: " + thePlayer.score, 0, 80);
+			gameArea.drawText("Score: " + player.score, 0, 80);
 			gameArea.drawText("Max Score: " + maxScore, 0, 100);
 			
 		} else {
@@ -303,7 +303,7 @@ $(document).ready(function(){
 	}
 	
 	function start() {
-		thePlayer = new player(Math.floor(Math.random()*gameArea.canvas.width),Math.floor(Math.random()*gameArea.canvas.height));
+		player = new Player(Math.floor(Math.random()*gameArea.canvas.width),Math.floor(Math.random()*gameArea.canvas.height));
 		enemies[0] = new enemy(Math.floor(Math.random()*gameArea.canvas.width),Math.floor(Math.random()*gameArea.canvas.height));
 		bullets[0] = new bullet(0,0,0);
 		pickups[0] = new pickup();
