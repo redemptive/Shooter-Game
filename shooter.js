@@ -190,17 +190,20 @@ $(document).ready(function(){
 		}
 	}
 
-	function pickup() {
-		this.x = Math.floor(Math.random()*gameArea.canvas.width);
-		this.y = Math.floor(Math.random()*gameArea.canvas.height);
-		this.size = 25;
-		this.color = "red"
-		if (Math.floor(Math.random() * 2) == 1) {
-			this.type = "health";
-		} else {
-			this.type = "bomb";
+	class Pickup {
+		constructor() {
+			this.x = Math.floor(Math.random()*gameArea.canvas.width);
+			this.y = Math.floor(Math.random()*gameArea.canvas.height);
+			this.size = 25;
+			this.color = "red"
+			if (Math.floor(Math.random() * 2) == 1) {
+				this.type = "health";
+			} else {
+				this.type = "bomb";
+			}
 		}
-		this.update = function () {
+
+		update() {
 			if (this.type == "health") {
 				gameArea.draw(this.size / 3,this.size,this.x,this.y + (this.size / 3),this.color);
 				gameArea.draw(this.size, this.size / 3, this.x + (this.size / 3), this.y , this.color);
@@ -208,7 +211,7 @@ $(document).ready(function(){
 				gameArea.draw(this.size, this.size, this.x, this.y, "yellow");
 			}
 		}
-		this.collect = function() {
+		collect() {
 			if (this.type == "health") {
 				if (player.health + 25 < player.maxHealth) {
 					player.health += 25;
@@ -219,7 +222,7 @@ $(document).ready(function(){
 				enemies[enemies.length - 1].die();
 			}
 		}
-		this.die = function() {
+		die() {
 			pickups.splice(pickups.indexOf(this),1);
 		}
 	}
@@ -256,7 +259,7 @@ $(document).ready(function(){
 			
 			//spawn healthbox randomly
 			if (pickups.length < maxPickups && Math.floor(Math.random() * 500) == 100) {
-				pickups[pickups.length] = new pickup();
+				pickups[pickups.length] = new Pickup();
 			}
 			
 			//update healthboxes
@@ -312,7 +315,7 @@ $(document).ready(function(){
 		player = new Player(Math.floor(Math.random()*gameArea.canvas.width),Math.floor(Math.random()*gameArea.canvas.height));
 		enemies[0] = new Enemy(Math.floor(Math.random()*gameArea.canvas.width),Math.floor(Math.random()*gameArea.canvas.height));
 		bullets.push(new Bullet(0,0,0));
-		pickups.push(new pickup());
+		pickups.push(new Pickup());
 	}
 	
 	gameArea.start();
