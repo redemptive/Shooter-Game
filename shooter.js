@@ -6,8 +6,8 @@ $(document).ready(function(){
 	const maxBullets = 20;
 	let difficulty = 1;
 	let enemies = [maxEnemies];
-	let bullets = [maxBullets];
-	let pickups = [maxPickups];
+	let bullets = [];
+	let pickups = [];
 	let paused = false;
 	let player;
 	//87 & 38 = up, 68 & 39 = right, 65 & 40 = down, 83 & 37 = left, 80 = pause
@@ -35,7 +35,7 @@ $(document).ready(function(){
 	
 	$(document).on("click", function(event) {
 		if (bullets.length < maxBullets) {
-			bullets[bullets.length] = new bullet(player.x,player.y,Math.atan2(player.aimY - player.y, player.aimX - player.x));
+			bullets[bullets.length] = new Bullet(player.x,player.y,Math.atan2(player.aimY - player.y, player.aimX - player.x));
 		}
 	});
 	
@@ -118,17 +118,20 @@ $(document).ready(function(){
 		}
 	}
 	
-	function enemy(x,y) {
-		this.health = 100;
-		this.cooldown = 0;
-		this.fireSpeed = 200 - (difficulty * 10);
-		this.color = "blue";
-		this.x = x;
-		this.y = y;
-		this.height = 20;
-		this.width = 20;
-		this.moving = Math.random() >= 0.5;
-		this.update = function() {
+	class Enemy {
+		constructor(x,y) {
+			this.health = 100;
+			this.cooldown = 0;
+			this.fireSpeed = 200 - (difficulty * 10);
+			this.color = "blue";
+			this.x = x;
+			this.y = y;
+			this.height = 20;
+			this.width = 20;
+			this.moving = Math.random() >= 0.5;
+		}
+		
+		update() {
 			
 			if (this.health < 0) {
 				this.die();
@@ -142,34 +145,36 @@ $(document).ready(function(){
 				this.cooldown += 1;
 			}
 			
-			//move if this is a moving enemy
+			//move if this is a moving Enemy
 			if (this.moving) {
 				this.x += ((player.x - this.x) / 500);
 				this.y += ((player.y - this.y) / 500);
 			}
 			
-			//draw enemy
+			//draw Enemy
 			gameArea.draw(this.height, this.width, this.x, this.y, this.color);
 		}
-		this.fire = function() {
+		fire() {
 			if (bullets.length < maxBullets) {
-				bullets[bullets.length] = new bullet(this.x,this.y,Math.atan2(player.y - this.y, player.x - this.x));
+				bullets[bullets.length] = new Bullet(this.x,this.y,Math.atan2(player.y - this.y, player.x - this.x));
 			}
 		}
-		this.die = function() {
+		die() {
 			enemies.splice(enemies.indexOf(this),1);
 		}
 	}
 	
-	function bullet(x, y, rotation) {
-		//Add an amount to x and y so the bullet doesn't hit the shooter
-		this.x = x + (50 * Math.cos(rotation));
-		this.y = y + (50 * Math.sin(rotation));
-		this.size = 5;
-		this.speed = 4;
-		this.rotation = rotation;
+	class Bullet {
+		constructor(x, y, rotation) {
+			//Add an amount to x and y so the bullet doesn't hit the shooter
+			this.x = x + (50 * Math.cos(rotation));
+			this.y = y + (50 * Math.sin(rotation));
+			this.size = 5;
+			this.speed = 4;
+			this.rotation = rotation;
+		}
 		
-		this.update = function() {
+		update() {
 			//Keep bullet going at the same speed on a diagonal path
 			this.x += this.speed * Math.cos(this.rotation);
 			this.y += this.speed * Math.sin(this.rotation);
@@ -179,7 +184,7 @@ $(document).ready(function(){
 			gameArea.draw(this.size,this.size,this.x,this.y,"black",this.rotation);
 		}
 		
-		this.die = function() {
+		die() {
 			//Remove from bullets array
 			bullets.splice(bullets.indexOf(this),1);
 		}
@@ -246,7 +251,7 @@ $(document).ready(function(){
 			}
 			//Spawn enemies randomly or spawn if there isn't any active ones
 			if (enemies.length < 1 || ((Math.floor(Math.random() * 200) == 100) && enemies.length < maxEnemies && enemies.length < difficulty)) {
-				enemies[enemies.length] = new enemy(Math.floor(Math.random()*gameArea.canvas.width),Math.floor(Math.random()*gameArea.canvas.height));
+				enemies[enemies.length] = new Enemy(Math.floor(Math.random()*gameArea.canvas.width),Math.floor(Math.random()*gameArea.canvas.height));
 			}
 			
 			//spawn healthbox randomly
@@ -275,7 +280,7 @@ $(document).ready(function(){
 			//Update all the bullets
 			for (i=0;i < bullets.length;i++) {
 				bullets[i].update();
-				//Check collission with the bullet at bullets[i] and every enemy
+				//Check collission with the bullet at bullets[i] and every Enemy
 				for (j=0;j < enemies.length;j++) {
 					if (collission(bullets[i].x,bullets[i].y,bullets[i].size,bullets[i].size,enemies[j].x,enemies[j].y,enemies[j].width,enemies[j].height)) {
 						enemies[j].health -= 50;
@@ -305,9 +310,9 @@ $(document).ready(function(){
 	
 	function start() {
 		player = new Player(Math.floor(Math.random()*gameArea.canvas.width),Math.floor(Math.random()*gameArea.canvas.height));
-		enemies[0] = new enemy(Math.floor(Math.random()*gameArea.canvas.width),Math.floor(Math.random()*gameArea.canvas.height));
-		bullets[0] = new bullet(0,0,0);
-		pickups[0] = new pickup();
+		enemies[0] = new Enemy(Math.floor(Math.random()*gameArea.canvas.width),Math.floor(Math.random()*gameArea.canvas.height));
+		bullets.push(new Bullet(0,0,0));
+		pickups.push(new pickup());
 	}
 	
 	gameArea.start();
